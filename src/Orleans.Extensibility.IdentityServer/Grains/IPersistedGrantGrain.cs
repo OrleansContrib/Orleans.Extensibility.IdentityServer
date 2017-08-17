@@ -1,24 +1,24 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Orleans.Extensibility.IdentityServer
+namespace Orleans.Extensibility.IdentityServer.Grains
 {
     //Key == Grant Key
     internal interface IPersistedGrantGrain : IGrainWithStringKey
     {
-        Task Create(ISubjectGrantCollectionGrain collection, IdentityServer4.Models.PersistedGrant grant);
-        Task<IdentityServer4.Models.PersistedGrant> GetData();
+        Task Create(ISubjectGrantCollectionGrain collection, PersistedGrant grant);
+        Task<PersistedGrant> GetData();
         Task Remove();
     }
 
     //Key == SubjectId
     public interface ISubjectGrantCollectionGrain : IGrainWithStringKey
     {
-        Task CreateGrant(IdentityServer4.Models.PersistedGrant grant);
+        Task CreateGrant(PersistedGrant grant);
         Task RemoveAllGrants();
         Task RemoveAllGrants(string clientId);
         Task RemoveAllGrants(string clientId, string type);
-        Task RemoveGrant(IdentityServer4.Models.PersistedGrant grant);
-        Task<IEnumerable<IdentityServer4.Models.PersistedGrant>> GetAllGrants();
+        Task RemoveGrant(PersistedGrant grant);
+        Task<IEnumerable<PersistedGrant>> GetAllGrants();
     }
 }

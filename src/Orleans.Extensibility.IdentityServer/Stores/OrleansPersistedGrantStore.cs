@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.Models;
 using IdentityServer4.Stores;
+using Orleans.Extensibility.IdentityServer.Mappers;
 
 namespace Orleans.Extensibility.IdentityServer.Stores
 {
@@ -16,16 +18,16 @@ namespace Orleans.Extensibility.IdentityServer.Stores
             _clusterClient = clusterClient;
         }
 
-        public Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId) => _clusterClient.GetGrain<ISubjectGrantCollectionGrain>(subjectId).GetAllGrants();
+        public async Task<IEnumerable<PersistedGrant>> GetAllAsync(string subjectId) => (await _clusterClient.GetGrain<Grains.ISubjectGrantCollectionGrain>(subjectId).GetAllGrants()).Select(g => g.ToModel());
 
-        public Task<PersistedGrant> GetAsync(string key) => _clusterClient.GetGrain<IPersistedGrantGrain>(key).GetData();
+        public async Task<PersistedGrant> GetAsync(string key) => (await _clusterClient.GetGrain<Grains.IPersistedGrantGrain>(key).GetData()).ToModel();
 
-        public Task RemoveAllAsync(string subjectId, string clientId) => _clusterClient.GetGrain<ISubjectGrantCollectionGrain>(subjectId).RemoveAllGrants(clientId);
+        public Task RemoveAllAsync(string subjectId, string clientId) => _clusterClient.GetGrain<Grains.ISubjectGrantCollectionGrain>(subjectId).RemoveAllGrants(clientId);
 
-        public Task RemoveAllAsync(string subjectId, string clientId, string type) => _clusterClient.GetGrain<ISubjectGrantCollectionGrain>(subjectId).RemoveAllGrants(clientId, type);
+        public Task RemoveAllAsync(string subjectId, string clientId, string type) => _clusterClient.GetGrain<Grains.ISubjectGrantCollectionGrain>(subjectId).RemoveAllGrants(clientId, type);
 
-        public Task RemoveAsync(string key) => _clusterClient.GetGrain<IPersistedGrantGrain>(key).Remove();
+        public Task RemoveAsync(string key) => _clusterClient.GetGrain<Grains.IPersistedGrantGrain>(key).Remove();
 
-        public Task StoreAsync(PersistedGrant grant) => _clusterClient.GetGrain<ISubjectGrantCollectionGrain>(grant.SubjectId).CreateGrant(grant);
+        public Task StoreAsync(PersistedGrant grant) => _clusterClient.GetGrain<Grains.ISubjectGrantCollectionGrain>(grant.SubjectId).CreateGrant(grant.ToEntity());
     }
 }

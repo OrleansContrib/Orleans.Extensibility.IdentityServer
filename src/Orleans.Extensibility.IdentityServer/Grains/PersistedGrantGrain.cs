@@ -2,38 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using IdentityServer4.Models;
-using Orleans.Extensibility.IdentityServer.Mappers;
 
 namespace Orleans.Extensibility.IdentityServer.Grains
 {
     internal class PersistedGrantGrain : Grain<PersistedGrantState>, IPersistedGrantGrain
     {
-        public Task Create(ISubjectGrantCollectionGrain collection, IdentityServer4.Models.PersistedGrant grant)
+        public Task Create(ISubjectGrantCollectionGrain collection, PersistedGrant grant)
         {
             if (collection == null) throw new ArgumentNullException(nameof(collection));
             if (grant == null) throw new ArgumentNullException(nameof(grant));
 
             State.Collection = collection;
-            State.Grant = grant.ToEntity();
+            State.Grant = grant;
             return WriteStateAsync();
         }
 
         public async Task Remove()
         {
-            await State.Collection.RemoveGrant(this.State.Grant.ToModel());
+            await State.Collection.RemoveGrant(this.State.Grant);
             State.Collection = null;
             State.Grant = null;
             await ClearStateAsync();
             DeactivateOnIdle();
         }
 
-        Task<IdentityServer4.Models.PersistedGrant> IPersistedGrantGrain.GetData() => Task.FromResult(State.Grant?.ToModel());
+        Task<PersistedGrant> IPersistedGrantGrain.GetData() => Task.FromResult(State.Grant);
     }
 
     internal class SubjectGrantCollectionGrain : Grain<SubjectGrantCollectionState>, ISubjectGrantCollectionGrain
     {
-        public async Task CreateGrant(IdentityServer4.Models.PersistedGrant grant)
+        public async Task CreateGrant(PersistedGrant grant)
         {
             var grantGrain = GrainFactory.GetGrain<IPersistedGrantGrain>(grant.Key);
             await grantGrain.Create(this, grant);
@@ -42,7 +40,7 @@ namespace Orleans.Extensibility.IdentityServer.Grains
             await WriteStateAsync();
         }
 
-        public async Task<IEnumerable<IdentityServer4.Models.PersistedGrant>> GetAllGrants()
+        public async Task<IEnumerable<PersistedGrant>> GetAllGrants()
         {
             return (await Task.WhenAll(State.ByClientId.Values.Select(async g => (await g.GetData())))).ToList();
         }
@@ -92,7 +90,7 @@ namespace Orleans.Extensibility.IdentityServer.Grains
             await WriteStateAsync();
         }
 
-        public Task RemoveGrant(IdentityServer4.Models.PersistedGrant grant)
+        public Task RemoveGrant(PersistedGrant grant)
         {
             State.ByClientId.Remove(grant.ClientId);
             State.ByClientIdAndType.Remove(new Tuple<string, string>(grant.ClientId, grant.Type));
